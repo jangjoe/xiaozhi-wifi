@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>小智 · 声波配网</title>
+<style>
+  :root {
+    --bg: #f4f6fb;
+    --card: #ffffff;
+    --text: #111827;
+    --muted: #6b7280;
+    --border: #d1d5db;
+    --primary: #0a7aff;
+    --primary-pressed: #0062d6;
+    --danger: #dc2626;
+    --ok: #059669;
+    --secondary-bg: #e5e7eb;
+    --secondary-text: #1f2937;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 16px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.5;
+  }
+  .wrap {
+    max-width: 460px;
+    margin: 0 auto;
+  }
+  .card {
+    background: var(--card);
+    border-radius: 14px;
+    padding: 18px;
+    box-shadow: 0 2px 10px rgba(17, 24, 39, 0.06);
+    margin-bottom: 14px;
+  }
+  h1 {
+    font-size: 20px;
+    margin: 0 0 6px;
+  }
+  .dev-badge {
+    display: inline-block;
+    font-size: 13px;
+    color: var(--primary);
+    background: rgba(10, 122, 255, 0.1);
+    padding: 3px 10px;
+    border-radius: 999px;
+    margin-bottom: 12px;
+  }
+  .field {
+    margin-bottom: 12px;
+  }
+  label.lbl {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 5px;
+  }
+  input[type="text"],
+  input[type="password"],
+  select {
+    width: 100%;
+    padding: 11px 12px;
+    font-size: 16px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--text);
+    outline: none;
+  }
+  input:focus, select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(10, 122, 255, 0.14);
+  }
+  .checks {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 8px 0 12px;
+  }
+  .chk {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .chk input {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+  }
+  .hide { display: none; }
+  .btns {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  button {
+    width: 100%;
+    padding: 13px 16px;
+    font-size: 16px;
+    font-weight: 600;
+    border: 0;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  button.primary {
+    background: var(--primary);
+    color: #fff;
+  }
+  button.primary:active { background: var(--primary-pressed); }
+  button.primary:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+  }
+  button.sec {
+    background: var(--secondary-bg);
+    color: var(--secondary-text);
+  }
+  button.sec:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+  #status {
+    margin: 12px 0 0;
+    font-size: 14px;
+    min-height: 22px;
+    white-space: pre-wrap;
+  }
+  .err { color: var(--danger); }
+  .ok { color: var(--ok); }
+  .info { color: var(--primary); }
+  .tip-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 6px;
+  }
+  .tip-list {
+    margin: 0;
+    padding-left: 18px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .tip-list li + li { margin-top: 4px; }
+  code {
+    background: #f3f4f6;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 12.5px;
+    color: #111827;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>小智 · 声波配网</h1>
+    <div id="devBadge" class="dev-badge">声波配网模式（16-FSK）</div>
+
+    <div class="field">
+      <label class="lbl" for="ssid">Wi-Fi 名称 (SSID)</label>
+      <input id="ssid" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="请输入 Wi-Fi 名称">
+    </div>
+
+    <div class="field">
+      <label class="lbl" for="pass">Wi-Fi 密码</label>
+      <input id="pass" type="password" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="无密码可留空">
+    </div>
+
+    <div class="checks">
+      <label class="chk"><input id="showPass" type="checkbox"> 显示密码</label>
+      <label class="chk"><input id="isEnt" type="checkbox"> 企业网络（WPA2-Enterprise / 802.1X）</label>
+    </div>
+
+    <div id="entRow" class="field hide">
+      <label class="lbl" for="entUser">用户名 (Identity)</label>
+      <input id="entUser" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="请输入企业网账号/工号">
+    </div>
+
+    <div class="field">
+      <label class="lbl" for="repeats">发送重复次数</label>
+      <select id="repeats">
+        <option value="1">1 遍（快速）</option>
+        <option value="3" selected>3 遍（推荐）</option>
+        <option value="5">5 遍（嘈杂环境）</option>
+      </select>
+    </div>
+
+    <div class="btns">
+      <button id="sendBtn" class="primary" type="button">通过声波发送给设备</button>
+      <button id="stopBtn" class="sec" type="button" disabled>停止播放</button>
+    </div>
+
+    <p id="status"></p>
+  </div>
+
+  <div class="card">
+    <p class="tip-title">配网提示与热点备选</p>
+    <ul class="tip-list">
+      <li>发送时请将手机扬声器靠近设备麦克风 <strong>20 厘米</strong>内，打开媒体音量并保持环境安静。</li>
+      <li id="apFallback">热点配网备选：连接设备热点 <code>Xiaozhi-XXXX</code>，浏览器访问 <code>http://192.168.4.1</code></li>
+      <li>隐私说明：所有配网操作均在手机本地完成，Wi-Fi 信息不会上传至任何服务器。</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var SAMPLE_RATE = 16000;
+  var SYMBOL_SAMPLES = 320;
+  var FREQ_BASE = 1500;
+  var FREQ_STEP = 100;
+  var PREAMBLE_SYMBOLS = 16;
+  var SYNC_BYTE = 0xA5;
+  var MAX_PAYLOAD = 48;
+  var AMPLITUDE = 0.45;
+
+  function $(id) { return document.getElementById(id); }
+
+  var qs = new URLSearchParams(window.location.search);
+  var rawDev = (qs.get("d") || "").trim();
+  var cleanDev = rawDev.replace(/[^0-9a-zA-Z_-]/g, "");
+  if (cleanDev) {
+    var apName = /^xiaozhi-/i.test(cleanDev) ? cleanDev : ("Xiaozhi-" + cleanDev.toUpperCase());
+    $("devBadge").textContent = "当前设备：" + apName;
+    $("apFallback").innerHTML = "热点配网备选：连接设备热点 <code>" + apName + "</code>，浏览器访问 <code>http://192.168.4.1</code>";
+  }
+
+  $("showPass").onchange = function (e) {
+    $("pass").type = e.target.checked ? "text" : "password";
+  };
+
+  $("isEnt").onchange = function (e) {
+    $("entRow").className = e.target.checked ? "field" : "field hide";
+  };
+
+  function setStatus(text, cls) {
+    var el = $("status");
+    el.textContent = text;
+    el.className = cls || "";
+  }
+
+  function crc16ccitt(bytes) {
+    var crc = 0xFFFF;
+    for (var i = 0; i < bytes.length; i++) {
+      crc ^= bytes[i] << 8;
+      for (var b = 0; b < 8; b++) {
+        crc = (crc & 0x8000) ? (((crc << 1) ^ 0x1021) & 0xFFFF) : ((crc << 1) & 0xFFFF);
+      }
+    }
+    return crc;
+  }
+
+  function buildPayload(ssid, pass, user) {
+    var enc = new TextEncoder();
+    var s = enc.encode(ssid);
+    var p = enc.encode(pass);
+    var u = enc.encode(user || "");
+
+    if (s.length < 1 || s.length > 32) {
+      return { error: "Wi-Fi 名称长度需为 1~32 字节（当前 " + s.length + " 字节）" };
+    }
+    if (p.length > 64) {
+      return { error: "Wi-Fi 密码不能超过 64 字节" };
+    }
+    if (u.length > 64) {
+      return { error: "用户名不能超过 64 字节" };
+    }
+
+    var payload;
+    if (u.length > 0) {
+      var totalEnt = 3 + s.length + u.length + p.length;
+      if (totalEnt > MAX_PAYLOAD) {
+        return { error: "企业网凭据总长度超过声波上限（" + totalEnt + " / " + MAX_PAYLOAD + " 字节），请改用热点 192.168.4.1 配网" };
+      }
+      payload = new Uint8Array(totalEnt);
+      payload[0] = 0x80 | s.length;
+      payload.set(s, 1);
+      payload[1 + s.length] = u.length;
+      payload.set(u, 2 + s.length);
+      payload[2 + s.length + u.length] = p.length;
+      payload.set(p, 3 + s.length + u.length);
+    } else {
+      var totalPlain = 2 + s.length + p.length;
+      if (totalPlain > MAX_PAYLOAD) {
+        return { error: "Wi-Fi 名称与密码总长度超过声波上限（" + totalPlain + " / " + MAX_PAYLOAD + " 字节），请改用热点 192.168.4.1 配网" };
+      }
+      payload = new Uint8Array(totalPlain);
+      payload[0] = s.length;
+      payload.set(s, 1);
+      payload[1 + s.length] = p.length;
+      payload.set(p, 2 + s.length);
+    }
+    return { payload: payload };
+  }
+
+  function frameFromPayload(payload) {
+    var crc = crc16ccitt(payload);
+    var frame = new Uint8Array(1 + payload.length + 2);
+    frame[0] = payload.length;
+    frame.set(payload, 1);
+    frame[1 + payload.length] = (crc >> 8) & 0xFF;
+    frame[2 + payload.length] = crc & 0xFF;
+    return frame;
+  }
+
+  function symbolsForFrame(frame) {
+    var symbols = [];
+    for (var i = 0; i < PREAMBLE_SYMBOLS; i++) {
+      symbols.push(0);
+    }
+    symbols.push((SYNC_BYTE >> 4) & 0x0F, SYNC_BYTE & 0x0F);
+    for (var j = 0; j < frame.length; j++) {
+      symbols.push((frame[j] >> 4) & 0x0F, frame[j] & 0x0F);
+    }
+    return symbols;
+  }
+
+  function synthesizePcm(symbols) {
+    var out = new Float32Array(symbols.length * SYMBOL_SAMPLES);
+    var phase = 0.0;
+    var idx = 0;
+    for (var i = 0; i < symbols.length; i++) {
+      var step = 2.0 * Math.PI * (FREQ_BASE + FREQ_STEP * symbols[i]) / SAMPLE_RATE;
+      for (var n = 0; n < SYMBOL_SAMPLES; n++) {
+        out[idx++] = AMPLITUDE * Math.sin(phase);
+        phase += step;
+      }
+    }
+    return out;
+  }
+
+  var audioCtx = null;
+  var activeSource = null;
+  var cancelToken = 0;
+  var waitTimer = null;
+
+  function sleepCancelable(ms, token) {
+    return new Promise(function (resolve) {
+      waitTimer = setTimeout(function () {
+        waitTimer = null;
+        resolve(token === cancelToken);
+      }, ms);
+    });
+  }
+
+  function playPcmOnce(pcm, token) {
+    return new Promise(function (resolve, reject) {
+      if (token !== cancelToken) {
+        resolve(false);
+        return;
+      }
+      try {
+        var buf = audioCtx.createBuffer(1, pcm.length, SAMPLE_RATE);
+        buf.getChannelData(0).set(pcm);
+        var src = audioCtx.createBufferSource();
+        src.buffer = buf;
+        src.connect(audioCtx.destination);
+        activeSource = src;
+        src.onended = function () {
+          if (activeSource === src) {
+            activeSource = null;
+          }
+          resolve(token === cancelToken);
+        };
+        src.start();
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
+  function setPlayingUi(playing) {
+    $("sendBtn").disabled = playing;
+    $("stopBtn").disabled = !playing;
+  }
+
+  $("stopBtn").onclick = function () {
+    cancelToken++;
+    if (waitTimer !== null) {
+      clearTimeout(waitTimer);
+      waitTimer = null;
+    }
+    if (activeSource) {
+      try { activeSource.stop(); } catch (e) {}
+      activeSource = null;
+    }
+    setPlayingUi(false);
+    setStatus("已停止播放。", "");
+  };
+
+  $("sendBtn").onclick = async function () {
+    var ssid = $("ssid").value.trim();
+    var pass = $("pass").value;
+    var isEnt = $("isEnt").checked;
+    var user = isEnt ? $("entUser").value.trim() : "";
+
+    if (!ssid) {
+      setStatus("请先输入 Wi-Fi 名称", "err");
+      return;
+    }
+    if (isEnt && !user) {
+      setStatus("企业网络需要填写用户名", "err");
+      return;
+    }
+
+    var built = buildPayload(ssid, pass, user);
+    if (built.error) {
+      setStatus(built.error, "err");
+      return;
+    }
+
+    var AudioCtor = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtor) {
+      setStatus("当前浏览器不支持 Web Audio 播放，请改用热点 192.168.4.1 配网。", "err");
+      return;
+    }
+
+    if (!audioCtx) {
+      audioCtx = new AudioCtor();
+    }
+    if (audioCtx.state === "suspended") {
+      try {
+        await audioCtx.resume();
+      } catch (e) {
+        setStatus("音频权限被阻止，请点击页面后重试。", "err");
+        return;
+      }
+    }
+
+    var repeats = parseInt($("repeats").value, 10) || 3;
+    var frame = frameFromPayload(built.payload);
+    var pcm = synthesizePcm(symbolsForFrame(frame));
+
+    var myToken = ++cancelToken;
+    setPlayingUi(true);
+
+    try {
+      for (var i = 1; i <= repeats; i++) {
+        if (myToken !== cancelToken) {
+          return;
+        }
+        setStatus("正在发送声波（第 " + i + "/" + repeats + " 遍）… 请将手机扬声器靠近设备麦克风 20cm 内，调大音量", "info");
+        var ok = await playPcmOnce(pcm, myToken);
+        if (!ok || myToken !== cancelToken) {
+          return;
+        }
+        if (i < repeats) {
+          var cont = await sleepCancelable(500, myToken);
+          if (!cont || myToken !== cancelToken) {
+            return;
+          }
+        }
+      }
+      if (myToken === cancelToken) {
+        setPlayingUi(false);
+        setStatus("声波已发送完成，请观察设备屏幕连接进度；若未响应请调大音量重试。", "ok");
+      }
+    } catch (err) {
+      if (myToken === cancelToken) {
+        setPlayingUi(false);
+        setStatus("播放失败：浏览器不允许播放音频，请点一下页面再试。", "err");
+      }
+    }
+  };
+})();
+</script>
+</body>
+</html>
